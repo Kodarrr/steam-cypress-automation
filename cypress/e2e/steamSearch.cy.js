@@ -44,7 +44,7 @@ const getGameData = (index) => {
 
 describe('Search box',()=>{
     it('search',()=>{
-        cy.visit('https://store.steampowered.com/')
+        cy.visit('/')
         cy.get('[name="term"]').type('dota 2{enter}')
         cy.url().should('include','term=dota+2')
         cy.get('[id="term"][name="displayterm"]').should('have.value','dota 2')
@@ -54,5 +54,17 @@ describe('Search box',()=>{
 
         cy.get('@firstGame').then((game) => cy.log(JSON.stringify(game)))
         cy.get('@secondGame').then((game) => cy.log(JSON.stringify(game)))
+
+        cy.get('@secondGame').then((game)=>{
+            //name
+            
+            cy.get('[id="term"]').clear().type(`${game.name}{enter}`)
+
+            cy.get('#search_resultsRows .search_result_row')
+            .first()
+            .find('.title')
+            .should('have.text', game.name)
+            
+        })
     })
 })
