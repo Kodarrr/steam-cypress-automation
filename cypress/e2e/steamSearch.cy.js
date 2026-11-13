@@ -1,8 +1,8 @@
 import homepage from "../pages/Homepage"
 import searchResultPage from "../pages/SearchResultPage"
 
-describe('Search box',()=>{
-    it('search',()=>{
+describe('Steam Store - Search and Verification',()=>{
+    it('store results and verify them',()=>{
 
       //step 1: Navigate to Steam Store
       homepage.visit()
@@ -34,17 +34,21 @@ describe('Search box',()=>{
 
       //step 6: Final Verification
 
-      // cy.get('@firstGame').then((firstGame)=>{
-      //   cy.get('@secondGame').then((secondGame)=>{
+      cy.get('@firstGame').then((firstGame)=>{
+        cy.get('@secondGame').then((secondGame)=>{
 
-      //     const storedGames=[firstGame,secondGame]
+          const storedGames=[firstGame,secondGame]
 
-      //     searchResultPage.verifySearchBox(secondGame.name)
+          //If we use Firstgame in step 6, all test passed 
+          searchResultPage.search(firstGame.name)
 
-      //     searchResultPage.verifyResultsContain(storedGames.map((game) => game.name))
+          // searchResultPage.verifySearchBox(secondGame.name)
+          searchResultPage.verifySearchBox(firstGame.name)
 
-      //     storedGames.forEach((game)=>searchResultPage.verifyGameData(game))
-      //   })
-      // })
+          searchResultPage.verifyResultsContain(storedGames.map((game) => game.name))
+
+          storedGames.forEach((game)=>searchResultPage.verifyGameData(game))
+        })
+      })
     })
 })

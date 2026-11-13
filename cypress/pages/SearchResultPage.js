@@ -66,7 +66,7 @@ class SearchResultPage{
             const resultTitles = [...$titles].map((el) => el.innerText.trim())
 
             gameNames.forEach((name) => {
-            expect(resultTitles, `"${name}" not found. Results were: ${resultTitles.join(' | ')}`).to.include(name)
+            expect(resultTitles, `"${name}" not found.`).to.include(name)
             })
         })
     }
