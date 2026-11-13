@@ -1,4 +1,5 @@
 const ROWS='#search_resultsRows .search_result_row'
+
 class SearchResultPage{
     elements={
         searchInput : ()=> cy.get('[id="term"][name="displayterm"]'),

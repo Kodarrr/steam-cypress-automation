@@ -43,6 +43,7 @@ describe('Steam Store - Search and Verification',()=>{
           searchResultPage.search(firstGame.name)
 
           // searchResultPage.verifySearchBox(secondGame.name)
+
           searchResultPage.verifySearchBox(firstGame.name)
 
           searchResultPage.verifyResultsContain(storedGames.map((game) => game.name))

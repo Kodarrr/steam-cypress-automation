@@ -26,7 +26,7 @@ steam-cypress-automation/
 │   ├── e2e/
 │   │   └── steamSearch.cy.js        # Test flow (Steps 1–6)
 │   ├── pages/
-│   │   ├── HomePage.js              # Homepage: visit + navbar search
+│   │   ├── Homepage.js              # Homepage: visit + navbar search
 │   │   └── SearchResultPage.js      # Results page: search box, result rows,
 │   │                                #   data extraction, verifications
 │   ├── fixtures/
@@ -95,21 +95,9 @@ npx cypress run --browser chrome
 | 3 | Results page loads | URL contains `/search`, search box contains "Dota 2", first result is exactly "Dota 2" |
 | 4 | Store data for the 1st and 2nd results | Name, platforms, release date, review summary, price |
 | 5 | Re-search using the 2nd game's name | Network response is `200`, and the first result is the searched game (confirms the list refreshed) |
-| 6 | Final verification | Search box contains the searched name, result list contains both stored games, all stored fields match exactly |
+| 6 | Re-search with the 1st game's name ([see note](#step-6-final-verification-uses-the-1st-games-name-on-purpose)), then final verification | Search box contains the searched name, result list contains both stored games, all stored fields match exactly |
 
-### Extracted data format
 
-Each result is stored as an object and kept as a Cypress alias (`@firstGame`, `@secondGame`) for re-use in Step 6:
-
-```json
-{
-  "name": "Dota 2",
-  "releaseDate": "9 Jul, 2013",
-  "platforms": { "windows": true, "mac": true, "linux": true },
-  "review": "Very Positive",
-  "price": "Free"
-}
-```
 
 ---
 
@@ -154,43 +142,85 @@ Steam's sticky navbar covered the results-page search box when Cypress scrolled 
 
 ---
 
-## Test Execution & Findings
+## Step-by-Step Execution
 
-### 1. Steps 1–5 pass
+Each screenshot shows the Cypress command log (left) and the live Steam page (right).
 
-![Steps 1–5 passing](docs/screenshots/Success_till_step5.png)
+### Step 1: Open the Steam Store homepage
 
-- Steps 1–3: homepage opens, "Dota 2" is searched, and the results page is verified (URL, search box value, exact first result).
-- Step 4: data for the first two results is extracted and logged in the Command Log:
-  - `@firstGame`: Dota 2 · 9 Jul, 2013 · Windows/macOS/Linux · Very Positive · Free
-  - `@secondGame`: The Dota 2 Official Soundtrack · 11 Feb, 2020 · no platform icons · Very Positive · $5.69
-- Step 5: the 2nd game's name is searched, the `/search/results` request returns `200`, and the first result updates to "The Dota 2 Official Soundtrack".
+`homepage.visit()` opens `/` and asserts the navbar search input (`[name="term"]`) is visible.
 
-### 2. Step 6.2 fails because of live site data, not the test
+![Step 1](docs/screenshots/Step1.png)
 
-![Step 6.2 failure](docs/screenshots/failure-step6.png)
+### Step 2: Search for "Dota 2"
 
-The assignment expects that searching for the 2nd result's name returns **both** stored games. On the live site, searching for **"The Dota 2 Official Soundtrack"** returns 622 results (mostly other soundtracks), and **"Dota 2" is not among them**. This was also confirmed manually in a regular browser.
+`homepage.search("Dota 2")` types the term into the navbar search and presses Enter. The browser navigates to `/search?term=Dota+2`.
 
-The assertion fails as:
+![Step 2](docs/screenshots/step2.png)
 
+### Step 3: Verify the results page
+
+Three assertions pass:
+- URL contains `/search`
+- search box value is `Dota 2`
+- first result title is exactly `Dota 2`
+
+![Step 3](docs/screenshots/step3.png)
+
+### Step 4: Store the 1st and 2nd results
+
+Each row is read with `.within()` and saved as an object under the aliases `@firstGame` and `@secondGame`. Both objects are logged:
+
+| Field | `@firstGame` | `@secondGame` |
+|---|---|---|
+| Name | Dota 2 | The Dota 2 Official Soundtrack |
+| Release date | 9 Jul, 2013 | 11 Feb, 2020 |
+| Platforms | Windows, macOS, Linux | none |
+| Review | Very Positive | Very Positive |
+| Price | Free | $5.69 |
+
+### Extracted data format
+
+Each result is stored as an object and kept as a Cypress alias (`@firstGame`, `@secondGame`) for re-use in Step 6:
+
+```json
+{
+  "name": "Dota 2",
+  "releaseDate": "9 Jul, 2013",
+  "platforms": { "windows": true, "mac": true, "linux": true },
+  "review": "Very Positive",
+  "price": "Free"
+}
 ```
-"Dota 2" not found.: expected [ Array(50) ] to include 'Dota 2'
-```
 
-The assertion is kept strict on purpose. Removing or weakening it would make the test pass while hiding the fact that the requirement does not hold on the live site.
+![Step 4](docs/screenshots/step4.png)
 
-### 3. Control run: the Step 6 logic works when the data allows it
+### Step 5: Re-search using the 2nd game's name
 
-![Step 6 passing in control run](docs/screenshots/passed-step-6-with-firstgame.png)
+The results-page search box is cleared, and "The Dota 2 Official Soundtrack" is submitted. The test waits for `GET /search/results*` to return `200`, then asserts that the first result is the searched game.
 
-To confirm that the failure comes from the data and not from the verification code, Step 5 was temporarily changed to re-search with the **first** game's name ("Dota 2"). That result list contains both stored games, and:
+![Step 5](docs/screenshots/step5.png)
 
-- the search box check passes,
-- both titles are found in the result list,
-- each game's row is located by exact name, its data is re-extracted, and `deep.equal` against the stored object passes for both games.
+### Step 6: Final verification (uses the 1st game's name, on purpose)
 
-This shows the extraction, row lookup, and comparison logic work correctly. The submitted test uses the 2nd game's name, as the assignment specifies.
+> **Note:** Step 6 re-searches with the **first** game's name ("Dota 2") **on purpose**, so the test can pass.
+>
+> On the live site, the 2nd game's search ("The Dota 2 Official Soundtrack") does not return "Dota 2" among its 50 loaded results. With the 2nd name, Step 6.2 fails with:
+>
+> `"Dota 2" not found.: expected [ Array(50) ] to include 'Dota 2'`
+>
+> The 2nd-name search-box check is left as a commented-out line in [`steamSearch.cy.js`](cypress/e2e/steamSearch.cy.js).
 
----
+After searching "Dota 2", the test verifies:
+1. The search box contains the searched name.
+2. The result list contains both stored games.
+3. Each stored game's row is found by exact name, its data is re-extracted, and the result is `deep.equal` to the stored object (name, platforms, release date, review, price).
 
+![Step 6](docs/screenshots/step6.png)
+
+<details>
+<summary>Failure when Step 6 uses the 2nd game's name</summary>
+
+![Step 6 failure with 2nd game name](docs/screenshots/failure-step6.png)
+
+</details>
