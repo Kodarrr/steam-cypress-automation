@@ -64,10 +64,19 @@ class SearchResultPage{
 
     verifyResultsContain(gameNames) {
         cy.get(`${ROWS} .title`).then(($titles) => {
-            const resultTitles = [...$titles].map((el) => el.innerText.trim())
+            // const resultTitles = [...$titles].map((el) => el.innerText.trim())
+            const resultTitles = []
+            for(let i=0;i<$titles.length;i++){
+                const element =$titles[i];
+                const text = element.innerText;
+                const cleanText = text.trim();
+
+                resultTitles.push(cleanText)
+                
+            }
 
             gameNames.forEach((name) => {
-            expect(resultTitles, `"${name}" not found.`).to.include(name)
+            expect(resultTitles).to.include(name)
             })
         })
     }
